@@ -1,16 +1,30 @@
+#!/usr/bin/env python3
+
 import ldap
 import sys
 import psycopg2
+import json
 
-ldap_server = "ldaps://yourcompany.com:636"
-basedn = "ou=people,dc=company,dc=de"
-binddn = "cn=your_user,ou=admin,dc=company,dc=de"
-pw = ""
-psql_data = "host=localhost dbname=greenlight_production user=postgres password=PG-PASS" 
+with open("conf/.conf.json") as conf_file:
+    conf = json.load(conf_file)
+
+ldap_server = f"ldap://{conf['ldap']['host']}:{conf['ldap']['port']}"
+print(ldap_server)
+
+basedn = "ou=uds,ou=people,o=annuaire"
+binddn = conf['ldap']['binddn']
+pw = conf['ldap']['pw']
+
+psql_data = f"host={conf['greenlightDB']['host']} dbname={conf['greenlightDB']['dbname']} " \
+            f"user={conf['greenlightDB']['user']} password={conf['greenlightDB']['pw']}"
 
 ldp = ldap.initialize(ldap_server)
 
-searchFilter = "(&(sn=*)(givenName=*))"
+searchFilter = "(&(udsActive=TRUE)(!(udsLocked=TRUE))(|(!(udsDataSource=MANUEL))(&(udsDataSource=MANUEL)" \
+               "(udsAnonymousType=temporary)))(|(eduPersonPrimaryAffiliation=employee)" \
+               "(eduPersonPrimaryAffiliation=faculty)(eduPersonPrimaryAffiliation=researcher)" \
+               "(!(eduPersonPrimaryAffiliation=*))))"
+
 searchAttribute = ["uid", "sn", "givenName"]
 searchScope = ldap.SCOPE_SUBTREE
 try:
@@ -20,7 +34,7 @@ except ldap.INVALID_CREDENTIALS:
     print("Your username or password is incorrect.")
     sys.exit(0)
 except ldap.LDAPError as e:
-    if type(e.message) == dict and e.message.has_key('desc'):
+    if type(e.message) == dict and 'desc' in e.message:
         print(e.message['desc'])
     else:
         print(e)
