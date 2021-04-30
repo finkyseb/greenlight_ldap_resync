@@ -1,0 +1,14 @@
+{
+  "ldap": {
+    "host": "ldap.example.org",
+    "port": "389",
+    "binddn": "cn=operator",
+    "pw":"myPass"
+  },
+  "greenlightDB": {
+    "host": "greenlight.example.org",
+    "dbname": "greenlight_DB",
+    "user": "greenlight-user",
+    "pw": "myGreenPass"
+  }
+}
