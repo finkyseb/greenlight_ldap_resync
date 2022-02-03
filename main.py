@@ -9,7 +9,7 @@ with open("conf/.conf.json") as conf_file:
     conf = json.load(conf_file)
 
 ldap_server = f"ldap://{conf['ldap']['host']}:{conf['ldap']['port']}"
-print(ldap_server)
+# print(ldap_server)
 
 basedn = "ou=uds,ou=people,o=annuaire"
 binddn = conf['ldap']['binddn']
@@ -25,7 +25,11 @@ searchFilter = "(&(udsActive=TRUE)(!(udsLocked=TRUE))(|(!(udsDataSource=MANUEL))
                "(eduPersonPrimaryAffiliation=faculty)(eduPersonPrimaryAffiliation=researcher)" \
                "(!(eduPersonPrimaryAffiliation=*))))"
 
-searchAttribute = ["uid", "sn", "givenName"]
+""" Test mode """
+ 
+searchFilter = "(uid=unfricht)"
+
+searchAttribute = ["uid", "sn", "givenName", "cn"]
 searchScope = ldap.SCOPE_SUBTREE
 try:
     ldp.protocol_version = ldap.VERSION3
@@ -63,13 +67,14 @@ try:
         givenName = result_set[j][0][1]['givenName'][0].decode('utf-8')
         surName = result_set[j][0][1]['sn'][0].decode('utf-8')
         uid = result_set[j][0][1]['uid'][0].decode('utf-8')
-        fullname = givenName + " " + surName
+        cn = result_set[j][0][1]['cn'][0].decode('utf-8')
+        fullname = surName + " " + givenName
 
-        print('UPDATE users SET name=%s WHERE username=%s', (fullname, uid))
-        cur.execute('UPDATE users SET name=%s WHERE username=%s', (fullname, uid))
+        print(f"UPDATE users SET name='{cn}' WHERE username='{uid}';")
+        #cur.execute('UPDATE users SET name=%s WHERE username=%s', (fullname, uid))
 
     print("Committing to Database")
-    conn.commit()
+    #conn.commit()
 
 except (Exception, psycopg2.DatabaseError) as error:
     print(error)
